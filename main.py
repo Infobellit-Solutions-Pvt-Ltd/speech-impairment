@@ -10,11 +10,11 @@ app = Flask(__name__)
 
 load_start = time.time()
 # Load the Whisper model
-whisper_model = whisper.load_model("base")
+whisper_model = whisper.load_model("large-v3")
 print("Whisper model loaded successfully.")
 
 # Initialize the TTS model
-tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2", gpu=False)
+tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2", gpu=True)
 print("TTS model loaded successfully.")
 load_end  = time.time()
 print("{INFO}: TIME TAKEN TO LOAD MODELS", (load_end-load_start))
@@ -36,6 +36,8 @@ def chunk_text(text, max_length=250):
         chunks.append(" ".join(current_chunk))
 
     return chunks
+    
+    
 #route to Home Page
 @app.route('/')
 def hello_world():
@@ -57,7 +59,7 @@ def process_audio():
             tmp_audio_path = tmp_audio_file.name
 
         # Transcribe the audio using Whisper
-        result = whisper_model.transcribe(tmp_audio_path)
+        result = whisper_model.transcribe(tmp_audio_path,language='en')
         transcription_text = result['text'].strip()
 
         # Print the transcription before sending to TTS
@@ -112,4 +114,3 @@ def download_generated_audio(filename):
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=5000)
 #curl -X POST http://localhost:5000/process_audio -F "audio=@./sample.mp3"
-
