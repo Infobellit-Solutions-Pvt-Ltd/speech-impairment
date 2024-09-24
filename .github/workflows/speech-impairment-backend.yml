@@ -27,4 +27,4 @@ jobs:
       with:
         file: ./Dockerfile
         push: true
-        tags: ${{ secrets.DOCKER_USERNAME }}/todo-backend:latest
+        tags: ${{ secrets.DOCKER_USERNAME }}/speech-impairment-backend:latest
