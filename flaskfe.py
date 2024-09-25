@@ -47,36 +47,148 @@ def home():
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Audio Transcription and Voice Cloning</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                background-color: #f0f2f5;
+            }
+
+            h1, h2 {
+                color: #333;
+            }
+
+            h1 {
+                text-align: center;
+                margin-bottom: 40px;
+            }
+
+            form, .record-section {
+                background-color: white;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+                margin-bottom: 20px;
+            }
+
+            .container {
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+
+            label {
+                font-weight: bold;
+                margin-bottom: 5px;
+                display: block;
+            }
+
+            input[type="file"] {
+                margin-bottom: 20px;
+            }
+
+            button {
+                background-color: #007bff;
+                color: white;
+                padding: 10px 20px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: background-color 0.3s ease;
+            }
+
+            button:hover {
+                background-color: #0056b3;
+            }
+
+            audio {
+                margin-top: 20px;
+                width: 100%;
+            }
+
+            #result {
+                margin-top: 20px;
+                padding: 10px;
+                background-color: #f9f9f9;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                display: none;
+            }
+
+            #result a {
+                color: #007bff;
+                text-decoration: none;
+            }
+
+            #result a:hover {
+                text-decoration: underline;
+            }
+
+            .button-group {
+                display: flex;
+                gap: 10px;
+                margin-top: 20px;
+            }
+
+            #startRecord, #stopRecord, #uploadRecorded {
+                display: inline-block;
+                margin: 10px 0;
+            }
+
+            #stopRecord, #uploadRecorded {
+                display: none;
+            }
+
+            /* Hide the player initially */
+            #uploadedAudioPlayback {
+                display: none;
+            }
+        </style>
     </head>
     <body>
-        <h1>Dysarthria Patients Transcription and Voice Cloning</h1>
-        
-        <!-- Audio Upload Form -->
-        <h2>Upload an Audio File</h2>
-        <form id="audioForm" method="POST" enctype="multipart/form-data" action="/process_audio">
-            <label for="audio">Select an audio file (wav):</label>
-            <input type="file" name="audio" id="audio" accept=".wav"><br><br>
-            <button type="submit">Submit</button>
-        </form>
+        <div class="container">
+            <h1>Audio Transcription and Voice Cloning</h1>
 
-        <!-- Audio Recording Controls -->
-        <h2>Or Record Your Audio</h2>
-        <button id="startRecord">Start Recording</button>
-        <button id="stopRecord" disabled>Stop Recording</button>
-        <audio id="audioPlayback" controls></audio>
-        <button id="uploadRecorded" disabled>Upload Recorded Audio</button>
-        
-        <div id="result"></div>
+            <!-- Audio Upload Form -->
+            <form id="audioForm" method="POST" enctype="multipart/form-data" action="/process_audio">
+                <h2>Upload an Audio File</h2>
+                <label for="audio">Select an audio file (wav):</label>
+                <input type="file" name="audio" id="audio" accept=".wav" required><br><br>
+                <audio id="uploadedAudioPlayback" controls></audio><br><br>
+                <button type="submit">Submit</button>
+            </form>
+
+            <!-- Audio Recording Controls -->
+            <div class="record-section">
+                <h2>Or Record Your Audio</h2>
+                <div class="button-group">
+                    <button id="startRecord">Start Recording</button>
+                    <button id="stopRecord">Stop Recording</button>
+                    <button id="uploadRecorded">Upload Recorded Audio</button>
+                </div>
+                <audio id="audioPlayback" controls></audio>
+            </div>
+            
+            <div id="result"></div>
+        </div>
 
         <script>
             const form = document.getElementById('audioForm');
             const resultDiv = document.getElementById('result');
+            const audioInput = document.getElementById('audio');
+            const uploadedAudioPlayer = document.getElementById('uploadedAudioPlayback');
 
             // Handle form submission for uploaded audio files
             form.addEventListener('submit', async function(event) {
                 event.preventDefault();
                 
                 const formData = new FormData(form);
+                resultDiv.style.display = 'block';
                 resultDiv.innerHTML = 'Processing, please wait...';
 
                 try {
@@ -106,6 +218,18 @@ def home():
                 }
             });
 
+            // Audio preview for uploaded files
+            audioInput.addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const audioUrl = URL.createObjectURL(file);
+                    uploadedAudioPlayer.src = audioUrl;
+                    uploadedAudioPlayer.style.display = 'block';  // Show the player once a file is selected
+                } else {
+                    uploadedAudioPlayer.style.display = 'none';  // Hide the player if no file is selected
+                }
+            });
+
             // Recording audio functionality
             let mediaRecorder;
             let audioChunks = [];
@@ -132,12 +256,13 @@ def home():
                         const audioUrl = URL.createObjectURL(audioBlob);
                         audioPlayback.src = audioUrl;
                         audioPlayback.style.display = 'block';
-                        uploadRecordedButton.disabled = false;
+                        uploadRecordedButton.style.display = 'inline-block';
 
                         // Upload the recorded audio when ready
                         uploadRecordedButton.addEventListener('click', async () => {
                             const formData = new FormData();
                             formData.append('audio', audioBlob, 'recorded_audio.wav');
+                            resultDiv.style.display = 'block';
                             resultDiv.innerHTML = 'Processing recorded audio, please wait...';
 
                             try {
@@ -168,8 +293,8 @@ def home():
                         });
                     };
 
-                    startRecordButton.disabled = true;
-                    stopRecordButton.disabled = false;
+                    startRecordButton.style.display = 'none';
+                    stopRecordButton.style.display = 'inline-block';
                 } catch (error) {
                     console.error('Error accessing microphone:', error);
                 }
@@ -178,8 +303,8 @@ def home():
             // Stop recording
             stopRecordButton.addEventListener('click', () => {
                 mediaRecorder.stop();
-                startRecordButton.disabled = false;
-                stopRecordButton.disabled = true;
+                startRecordButton.style.display = 'inline-block';
+                stopRecordButton.style.display = 'none';
             });
         </script>
     </body>
@@ -205,10 +330,7 @@ def process_audio():
         # Transcribe the audio using Whisper
         result = whisper_model.transcribe(tmp_audio_path)
         transcription_text = result['text'].strip()
-        
-        # Print the transcription before sending to TTS
-        print("Transcription from Whisper:", transcription_text)
-        
+
         # Split the transcription into chunks if it exceeds the character limit
         text_chunks = chunk_text(transcription_text, max_length=250)
 
@@ -257,4 +379,3 @@ def download_generated_audio(filename):
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=5000)
-
